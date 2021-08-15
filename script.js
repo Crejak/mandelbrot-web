@@ -46,19 +46,19 @@ const $BLUE = {
 /**
  * @type {Color}
  */
-const $PURPLE = {
+const $YELLOW = {
     r: 255,
-    g: 0,
-    b: 255,
+    g: 255,
+    b: 0,
     a: 255
 };
 
 /**
  * @type {Color}
  */
-const $RED = {
-    r: 255,
-    g: 0,
+const $GREEN = {
+    r: 0,
+    g: 255,
     b: 0,
     a: 255
 };
@@ -72,7 +72,7 @@ const $MAP_BLACK_AND_WHITE = [
         c: $WHITE
     },
     {
-        x: 1,
+        x: 100,
         c: $BLACK
     }
 ];
@@ -83,12 +83,12 @@ const $MAP_BLUE_TO_RED = [
         c: $BLUE
     },
     {
-        x: 0.5,
-        c: $PURPLE
+        x: 50,
+        c: $YELLOW
     },
     {
-        x: 1,
-        c: $RED
+        x: 100,
+        c: $GREEN
     }
 ];
 
@@ -174,6 +174,34 @@ function scale(vector, originRect, targetRect) {
  */
 function lerp(a, b, t) {
     return a * (1 - t) + b * t;
+}
+
+/**
+ * @param {Rectangle} rect 
+ * 
+ * @returns {Vector}
+ */
+function getCenter(rect) {
+    return {
+        x: rect.x + rect.w / 2,
+        y: rect.y + rect.h / 2
+    };
+}
+
+/**
+ * @param {Rectangle} rect 
+ * 
+ * @returns {boolean}
+ */
+function isValidRect(rect) {
+    return typeof(rect.x) === "number"
+        && typeof(rect.y) === "number"
+        && typeof(rect.w) === "number"
+        && typeof(rect.h) === "number"
+        && !isNaN(rect.x)
+        && !isNaN(rect.y)
+        && !isNaN(rect.w)
+        && !isNaN(rect.h);
 }
 
 /**
@@ -327,6 +355,7 @@ class ApplicationState {
          */
         this._listeners = new Map();
         this._listeners.set("real_rectangle_changed", []);
+        this._listeners.set("iteration_count_changed", []);
     }
 
     // Event listeners
@@ -385,6 +414,14 @@ class ApplicationState {
      */
     get iterationCount() {
         return this._iterationCount;
+    }
+
+    /**
+     * @param {number} iterationCount 
+     */
+    setIterationCount(iterationCount) {
+        this._iterationCount = iterationCount;
+        this.notifyListeners("iteration_count_changed")
     }
 
     /**
@@ -462,14 +499,18 @@ class Drawer {
         this._currentAnimationFrameHandle = undefined;
 
         $appState.addListener("real_rectangle_changed", (state) => {
-            window.cancelAnimationFrame(this._currentAnimationFrameHandle);
-            this._currentPixelScale = Infinity;
-            this._isDrawing = false;
+            this.startDrawing();
+        });
+
+        $appState.addListener("iteration_count_changed", (state) => {
             this.startDrawing();
         });
     }
 
     startDrawing() {
+        window.cancelAnimationFrame(this._currentAnimationFrameHandle);
+        this._currentPixelScale = Infinity;
+        this._isDrawing = false;
         this._draw();
     }
 
@@ -519,7 +560,7 @@ class Drawer {
                 if (belongs.result) {
                     setColorRect(this._imageBuffer, pixelRect, $BLACK);
                 } else {
-                    setColorRect(this._imageBuffer, pixelRect, getColorFromMap($MAP_BLACK_AND_WHITE, belongs.weight));
+                    setColorRect(this._imageBuffer, pixelRect, getColorFromMap($MAP_BLUE_TO_RED, belongs.weight));
                 }
     
                 pixel.x += pixelScale;
@@ -545,14 +586,12 @@ class Drawer {
     
             z = add(square(z), c);
             i += 1;
-
-            // console.log(`${i}. z=(${z.x}; ${z.y}), mod(z)=${mod(z)}, c=(${c.x}, ${c.y})`);
         }
     
         if (i >= $appState.iterationCount) {
             return {result: true, weight: NaN};
         }
-        return {result: false, weight: i / $appState.iterationCount};
+        return {result: false, weight: i};
     }
 }
 
@@ -622,13 +661,72 @@ function createMouseHandlers() {
         newRealRect.x = realCursorPos.x - (realCursorPos.x - newRealRect.x) * zoomScale;
         newRealRect.y = realCursorPos.y - (realCursorPos.y - newRealRect.y) * zoomScale;
         $appState.setRealRect(newRealRect);
-        console.log(`delta=${deltaPixels}, scale=${zoomScale} -> new rect (${$appState.realRect.x}, ${$appState.realRect.y}, ${$appState.realRect.w}, ${$appState.realRect.h})`);
     });
 }
 
 //////////////////
 // DATA BINDING //
 //////////////////
+
+function createControlsHandlers() {
+    /**
+     * @type {HTMLCanvasElement}
+     * @private
+     */
+    canvas = document.getElementById("canvas");
+
+    /**
+     * @type {Rectangle}
+     * @private
+     */
+    canvasRect = {x: 0, y: 0, w: canvas.width, h: canvas.height };
+
+    $appState.addListener("real_rectangle_changed", (state) => {
+        const center = getCenter(state.realRect);
+        const width = state.realRect.w;
+        document.querySelector('input[name="re-coord"]').value = center.x;
+        document.querySelector('input[name="im-coord"]').value = center.y;
+        document.querySelector('input[name="width"]').value = width;
+    });
+
+    canvas.addEventListener("mousemove", (event) => {
+        const realCursorPos = scale({x: event.offsetX, y: event.offsetY}, canvasRect, $appState.realRect);
+        document.getElementById("cursor-pos").innerText = `(${realCursorPos.x}; ${realCursorPos.y})`;
+    });
+
+    canvas.addEventListener("mouseleave", (event) => {
+        document.getElementById("cursor-pos").innerText = "cursor outside the graph";
+    });
+
+    document.getElementById("go-button").addEventListener("click", (event) => {
+        const center = {
+            x: parseFloat(document.querySelector('input[name="re-coord"]').value),
+            y: parseFloat(document.querySelector('input[name="im-coord"]').value)
+        };
+        const width = parseFloat(document.querySelector('input[name="width').value);
+        const height = width;
+
+        const rect = {
+            x: center.x - width / 2,
+            y: center.y - height / 2,
+            w: width,
+            h: height
+        };
+
+        if (isValidRect(rect)) {
+            $appState.setRealRect(rect);
+        }
+    });
+
+    document.querySelector('input[name="max-iteration"]').value = $appState.iterationCount;
+    document.getElementById("max-iteration-value").innerText = $appState.iterationCount;
+    document.querySelector('input[name="max-iteration"]').addEventListener("input", (event) => {
+        document.getElementById("max-iteration-value").innerText = event.target.value;
+        $appState.setIterationCount(event.target.value);
+    });
+
+    $appState.notifyListeners("real_rectangle_changed");
+}
 
 //////////
 // MAIN //
@@ -639,4 +737,5 @@ function main() {
     $appState.setDrawer(new Drawer());
     $appState.drawer.startDrawing();
     createMouseHandlers();
+    createControlsHandlers();
 }
