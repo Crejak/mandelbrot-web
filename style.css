@@ -1,0 +1,12 @@
+#canvas {
+    border: 2px solid black;
+}
+
+.col {
+    display: inline-block;
+    vertical-align: top;
+}
+
+input[type="range"] {
+    display: block;
+}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandelbrot explorer</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="script.js" type="application/javascript"></script>
+</head>
+<body onload="main()">
+    <header>
+        <h1>Mandelbrot explorer</h1>
+    </header>
+    <main>
+        <div id="container" class="col">
+            <canvas id="canvas" width="500" height="500">
+
+            </canvas>
+        </div>
+        <div id="controls" class="col fill">
+            <form onsubmit="return false;">
+                <fieldset>
+                    <legend>Navigation</legend>
+                    <p>
+                        Cursor at : <span id="cursor-pos"></span>
+                    </p>
+                    <label for="re-coord">Re</label>
+                    <input type="text" name="re-coord">
+                    <br>
+                    <label for="im-coord">Im</label>
+                    <input type="text" name="im-coord">
+                    <br>
+                    <label for="width">Width</label>
+                    <input type="text" name="width">
+                    <br>
+                    <button>Go !</button>
+                </fieldset>
+                <fieldset>
+                    <legend>Computation</legend>
+                    <label for="max-iteration">Max iteration : <span id="max-iteration-value"></span></label>
+                    <input type="range" min="100" max="5000" name="max-iteration">
+                </fieldset>
+                <fieldset>
+                    <legend>Display</legend>
+                    <label for="color-map">Color map</label>
+                    <select name="color-map">
+
+                    </select>
+                    <div id="color-map-details">
+
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
