@@ -8,105 +8,8 @@
  * @typedef {{x: number, y: number}} Vector
  * @typedef {{x: number, y: number, w: number, h: number}} Rectangle
  * @typedef {{result: boolean, weight: number}} WeightedResult
- * @typedef {{r: number, g: number, b: number, a: number}} Color
- * @typedef {Array<{x: number, c: Color}>} ColorMap
  */
 const _jsdoc = undefined;
-
-/**
- * @type {Color}
- */
-const $BLACK = {
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 255
-};
-
-/**
- * @type {Color}
- */
-const $WHITE = {
-    r: 255,
-    g: 255,
-    b: 255,
-    a: 255
-};
-
-/**
- * @type {Color}
- */
-const $BLUE = {
-    r: 0,
-    g: 0,
-    b: 255,
-    a: 255
-};
-
-/**
- * @type {Color}
- */
-const $YELLOW = {
-    r: 255,
-    g: 255,
-    b: 0,
-    a: 255
-};
-
-/**
- * @type {Color}
- */
-const $GREEN = {
-    r: 0,
-    g: 255,
-    b: 0,
-    a: 255
-};
-
-/**
- * @type {ColorMap}
- */
-const $MAP_BLACK_AND_WHITE = [
-    {
-        x: 0,
-        c: $WHITE
-    },
-    {
-        x: 100,
-        c: $BLACK
-    }
-];
-
-const $MAP_BLUE_TO_RED = [
-    {
-        x: 0,
-        c: $BLUE
-    },
-    {
-        x: 50,
-        c: $YELLOW
-    },
-    {
-        x: 100,
-        c: $GREEN
-    }
-];
-
-/**
- * @param {ColorMap} colorMap 
- * @param {number} x 
- * 
- * @returns {Color}
- */
-function getColorFromMap(colorMap, x) {
-    for (let i = 0; i < colorMap.length - 1; i += 1) {
-        if (x <= colorMap[i + 1].x) {
-            return colorLerp(colorMap[i].c, colorMap[i + 1].c,
-                (x - colorMap[i].x) / (colorMap[i + 1].x - colorMap[i].x))
-        }
-    }
-    return colorMap[colorMap.length - 1].c;
-}
 
 /**
  * @returns {Vector}
@@ -202,21 +105,6 @@ function isValidRect(rect) {
         && !isNaN(rect.y)
         && !isNaN(rect.w)
         && !isNaN(rect.h);
-}
-
-/**
- * @param {Color} colorA 
- * @param {Color} colorB 
- * @param {number} t 
- * @returns {Color}
- */
-function colorLerp(colorA, colorB, t) {
-    return {
-        r: lerp(colorA.r, colorB.r, t),
-        g: lerp(colorA.g, colorB.g, t),
-        b: lerp(colorA.b, colorB.b, t),
-        a: lerp(colorA.a, colorB.a, t)
-    };
 }
 
 /**

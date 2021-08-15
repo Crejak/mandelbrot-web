@@ -8,6 +8,8 @@
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="src/drawingWorker.js" type="javascript/worker"></script>
     <script src="src/utils.js" type="application/javascript"></script>
+    <script src="src/colors.js" type="application/javascript"></script>
+    <script src="src/consts.js" type="application/javascript"></script>
     <script src="src/main.js" type="application/javascript"></script>
 </head>
 <body onload="main()">
@@ -37,6 +39,11 @@
                     <input type="text" name="width">
                     <br>
                     <button id="go-button">Go !</button>
+                    <br>
+                    <label>Go to location</label>
+                    <select name="location">
+
+                    </select>
                 </fieldset>
                 <fieldset>
                     <legend>Computation</legend>
@@ -47,7 +54,7 @@
                     <legend>Display</legend>
                     <label for="color-map">Color map</label>
                     <select name="color-map">
-
+                        
                     </select>
                     <div id="color-map-details">
 

@@ -8,12 +8,7 @@ class ApplicationState {
          * @type {Rectangle}
          * @private
          */
-        this._realRect = {
-            x: -2.0,
-            y: -1.5,
-            w: 3.0,
-            h: 3.0
-        };
+        this._realRect = $LOCATION_MAP.get("Full set");
 
         /**
          * @type {number}
@@ -40,12 +35,19 @@ class ApplicationState {
         this._drawer = undefined;
 
         /**
+         * @type {String}
+         * @private
+         */
+        this._colorMapName = $ALL_MAPS.keys().next().value;
+
+        /**
          * @type {Map<String, Array<(state: ApplicationState) => any>>}
          * @private
          */
         this._listeners = new Map();
         this._listeners.set("real_rectangle_changed", []);
         this._listeners.set("iteration_count_changed", []);
+        this._listeners.set("color_map_changed", []);
     }
 
     // Event listeners
@@ -111,7 +113,7 @@ class ApplicationState {
      */
     setIterationCount(iterationCount) {
         this._iterationCount = iterationCount;
-        this.notifyListeners("iteration_count_changed")
+        this.notifyListeners("iteration_count_changed");
     }
 
     /**
@@ -140,6 +142,24 @@ class ApplicationState {
      */
     setDrawer(drawer) {
         this._drawer = drawer;
+    }
+
+    /**
+     * @return {ColorMap}
+     */
+    get colorMap() {
+        return $ALL_MAPS.get(this._colorMapName);
+    }
+
+    /**
+     * @param {String} colorMapName 
+     */
+    setColorMapName(colorMapName) {
+        if (!$ALL_MAPS.has(colorMapName)) {
+            throw "Invalid map name";
+        }
+        this._colorMapName = colorMapName;
+        this.notifyListeners("color_map_changed");
     }
 }
 
@@ -193,6 +213,10 @@ class Drawer {
         });
 
         $appState.addListener("iteration_count_changed", (state) => {
+            this.startDrawing();
+        });
+
+        $appState.addListener("color_map_changed", (state) => {
             this.startDrawing();
         });
     }
@@ -250,7 +274,7 @@ class Drawer {
                 if (belongs.result) {
                     setColorRect(this._imageBuffer, pixelRect, $BLACK);
                 } else {
-                    setColorRect(this._imageBuffer, pixelRect, getColorFromMap($MAP_BLUE_TO_RED, belongs.weight));
+                    setColorRect(this._imageBuffer, pixelRect, getColorFromMap($appState.colorMap, belongs.weight));
                 }
     
                 pixel.x += pixelScale;
@@ -416,6 +440,24 @@ function createControlsHandlers() {
     });
 
     $appState.notifyListeners("real_rectangle_changed");
+    
+    let colorMapSelectHtml = "";
+    for (let colorMapName of $ALL_MAPS.keys()) {
+        colorMapSelectHtml += `<option value="${colorMapName}">${colorMapName}</option>\n`;
+    }
+    document.querySelector('select[name="color-map"').innerHTML = colorMapSelectHtml;
+    document.querySelector('select[name="color-map"').addEventListener("change", (event) => {
+        $appState.setColorMapName(event.target.value);
+    });
+    
+    let locationSelectHtml = "";
+    for (let locationName of $LOCATION_MAP.keys()) {
+        locationSelectHtml += `<option value="${locationName}">${locationName}</option>\n`;
+    }
+    document.querySelector('select[name="location"').innerHTML = locationSelectHtml;
+    document.querySelector('select[name="location"').addEventListener("change", (event) => {
+        $appState.setRealRect($LOCATION_MAP.get(event.target.value));
+    });
 }
 
 //////////
