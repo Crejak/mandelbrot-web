@@ -274,7 +274,7 @@ class Drawer {
                 if (belongs.result) {
                     setColorRect(this._imageBuffer, pixelRect, $BLACK);
                 } else {
-                    setColorRect(this._imageBuffer, pixelRect, getColorFromMap($appState.colorMap, belongs.weight));
+                    setColorRect(this._imageBuffer, pixelRect, getColorFromMapCycle($appState.colorMap, belongs.weight));
                 }
     
                 pixel.x += pixelScale;
