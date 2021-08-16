@@ -8,6 +8,7 @@
  * @typedef {{x: number, y: number}} Vector
  * @typedef {{x: number, y: number, w: number, h: number}} Rectangle
  * @typedef {{result: boolean, weight: number}} WeightedResult
+ * @typedef {{endMessage: boolean, data: any}} WorkerResult
  */
 const _jsdoc = undefined;
 

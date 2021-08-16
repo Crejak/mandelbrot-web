@@ -185,23 +185,11 @@ class Drawer {
         this._ctx = this._canvas.getContext("2d");
 
         /**
-         * @type {ImageData}
+         * @type {Worker}
          * @private
          */
-        this._imageBuffer = this._ctx.createImageData(this._canvas.width, this._canvas.height);
-
-        /**
-         * @type {boolean}
-         * @private
-         */
-        this._isDrawing = false;
-
-        /**
-         * @type {number}
-         * @private
-         */
-        this._currentPixelScale = Infinity;
-
+        this._worker = undefined;
+        
         /**
          * @type {number}
          * @private
@@ -209,103 +197,59 @@ class Drawer {
         this._currentAnimationFrameHandle = undefined;
 
         $appState.addListener("real_rectangle_changed", (state) => {
-            this.startDrawing();
+            this.startWorker();
         });
 
         $appState.addListener("iteration_count_changed", (state) => {
-            this.startDrawing();
+            this.startWorker();
         });
 
         $appState.addListener("color_map_changed", (state) => {
-            this.startDrawing();
+            this.startWorker();
         });
     }
 
-    startDrawing() {
-        window.cancelAnimationFrame(this._currentAnimationFrameHandle);
-        this._currentPixelScale = Infinity;
-        this._isDrawing = false;
-        this._draw();
+    startWorker() {
+        if (this._worker !== undefined) {
+            this._worker.terminate();
+            cancelAnimationFrame(this._currentAnimationFrameHandle);
+        }
+        this._worker = new Worker("src/drawingWorker.js");
+        this._worker.onmessage = (ev) => {
+            if (ev.data.endMessage) {
+                return;
+            }
+            this._currentAnimationFrameHandle = requestAnimationFrame(() => {
+                this._draw(ev.data.data);
+            });
+        };
+        this._worker.postMessage({
+            dimensionVector: {x: this._canvas.width, y: this._canvas.height},
+            realRect: $appState.realRect,
+            pixelScale: $appState.maxPixelScale,
+            iterationCount: $appState.iterationCount,
+            colorMap: $appState.colorMap
+        });
+        this._prerender();
+    }
+
+    _prerender() {
+        const imageData = computeBuffer({x: this._canvas.width, y: this._canvas.height},
+            $appState.realRect,
+            $appState.maxPixelScale,
+            $appState.iterationCount,
+            $appState.colorMap);
+        this._draw(imageData);
     }
 
     /**
      * @private
+     * 
+     * @param {ImageData} imageData
      */
-    async _draw() {
-        this._currentAnimationFrameHandle = window.requestAnimationFrame(this._draw.bind(this));
-
-        if (this._isDrawing || this._currentPixelScale === 1) {
-            return;
-        }
-
-        if (this._currentPixelScale > $appState.maxPixelScale) {
-            this._currentPixelScale = $appState.maxPixelScale;
-        } else {
-            this._currentPixelScale = Math.ceil(this._currentPixelScale / 2);
-            if (this._currentPixelScale < 1) {
-                this._currentPixelScale = 1;
-            }
-        }
-        await this._computeBuffer(this._currentPixelScale);
+    _draw(imageData) {
         this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-        this._ctx.putImageData(this._imageBuffer, 0, 0);
-    }
-    
-    /**
-     * @private
-     * 
-     * @param {number} pixelScale 
-     */
-    async _computeBuffer(pixelScale = 1) {
-        let pixel = zero();
-        const bufferRect = getRectangle(this._imageBuffer);
-        const realRect = $appState.realRect;
-        while (pixel.y < this._imageBuffer.height) {
-            while (pixel.x < this._imageBuffer.width) {
-                const c = scale(pixel, bufferRect, realRect);
-                const belongs = this._belongToSet(c);
-
-                // console.log(`Pixel (${pixel.x}; ${pixel.y}) -> c (${c.x}; ${c.y}), result : (${belongs.result}, ${belongs.weight})`);
-    
-                /**
-                 * @type {Rectangle}
-                 */
-                const pixelRect = {x: pixel.x, y: pixel.y, w: pixelScale, h: pixelScale};
-                if (belongs.result) {
-                    setColorRect(this._imageBuffer, pixelRect, $BLACK);
-                } else {
-                    setColorRect(this._imageBuffer, pixelRect, getColorFromMapCycle($appState.colorMap, belongs.weight));
-                }
-    
-                pixel.x += pixelScale;
-            }
-            pixel.x = 0;
-            pixel.y += pixelScale;
-        }
-    }
-    
-    /**
-     * @private
-     * 
-     * @param {Vector} c 
-     * 
-     * @returns {WeightedResult}
-     */
-    _belongToSet(c) {
-        let z = zero();
-        let i = 0;
-    
-        while (smod(z) < $appState.divergenceLimit 
-            && i < $appState.iterationCount) {
-    
-            z = add(square(z), c);
-            i += 1;
-        }
-    
-        if (i >= $appState.iterationCount) {
-            return {result: true, weight: NaN};
-        }
-        return {result: false, weight: i};
+        this._ctx.putImageData(imageData, 0, 0);
     }
 }
 
@@ -465,11 +409,8 @@ function createControlsHandlers() {
 //////////
 
 function main() {
-    console.log("loaded");
     $appState.setDrawer(new Drawer());
-    $appState.drawer.startDrawing();
+    $appState.drawer.startWorker();
     createMouseHandlers();
     createControlsHandlers();
-
-    new Worker("src/drawingWorker.js");
 }
