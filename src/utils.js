@@ -169,6 +169,61 @@ function setColorRect(imageData, rect, color) {
 }
 
 /**
+ * @param {number} index 
+ * @param {number} rowLength 
+ * @param {number} delta 
+ * @returns {number}
+ */
+function rowShift(index, rowLength, delta) {
+    return ((index + delta) % rowLength) + Math.floor(index / rowLength) * rowLength;
+}
+
+/**
+ * @param {number} index 
+ * @param {number} rowLength 
+ * @param {number} delta 
+ * @returns {number}
+ */
+function colShift(index, rowLength, mapLength, delta) {
+    return ((index + delta * rowLength) + mapLength) % mapLength;
+}
+
+function shift(index, rowLength, mapLength, deltaRow, deltaCol) {
+    return colShift(rowShift(index, rowLength, deltaRow), rowLength, mapLength, deltaCol);
+}
+
+/**
+ * @param {ImageData} imageData 
+ */
+function antialias(imageData) {
+    let aliased = new ImageData(imageData.width, imageData.height);
+    const w = imageData.width * 4;
+    const l = imageData.width * imageData.height * 4;
+    for (let i = 0; i < l; i += 1) {
+        const leftIndex = ((i - 4) % w) + Math.floor(i / w) * w;
+        const rightIndex = ((i + 4) % w) + Math.floor(i / w) * w;
+        const topIndex = ((i - w) + l) % l;
+        const bottomIndex = ((i + w) + l) % l;
+
+        const topLeftIndex = 
+
+        aliased.data[i] = Math.floor((
+            imageData.data[i] * 8 + (
+                imageData.data[shift(i, w, l, -4, 0)] +
+                imageData.data[shift(i, w, l, -4, -1)] +
+                imageData.data[shift(i, w, l, 0, -1)] +
+                imageData.data[shift(i, w, l, 4, -1)] +
+                imageData.data[shift(i, w, l, 4, 0)] +
+                imageData.data[shift(i, w, l, 4, 1)] +
+                imageData.data[shift(i, w, l, 0, 1)] +
+                imageData.data[shift(i, w, l, -4, 1)]
+            )
+        ) / 16);
+    }
+    return aliased;
+}
+
+/**
  * @param {ImageData} imageData 
  * 
  * @returns {Rectangle}

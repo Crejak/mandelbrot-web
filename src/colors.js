@@ -176,6 +176,21 @@ const $MAP_NIGHT = [
     }
 ];
 
+const $MAP_TOON = [
+    {
+        x: 0,
+        c: {r: 220, g: 112, b: 0, a: 255}
+    },
+    {
+        x: 3,
+        c: {r: 255, g: 128, b: 0, a: 255}
+    },
+    {
+        x: 4,
+        c: {r: 100, g: 20, b: 200, a: 255}
+    }
+];
+
 /**
  * @type {Map<String, ColorMap}
  */
@@ -183,6 +198,7 @@ let $ALL_MAPS = new Map();
 $ALL_MAPS.set("Black and white", $MAP_BLACK_AND_WHITE);
 $ALL_MAPS.set("Rainbow", $MAP_RAINBOW);
 $ALL_MAPS.set("Night", $MAP_NIGHT);
+$ALL_MAPS.set("Toon", $MAP_TOON);
 
 /**
  * @param {ColorMap} colorMap 

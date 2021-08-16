@@ -217,6 +217,7 @@ class Drawer {
         this._worker = new Worker("src/drawingWorker.js");
         this._worker.onmessage = (ev) => {
             if (ev.data.endMessage) {
+                // this._drawSmooth(ev.data.data);
                 return;
             }
             this._currentAnimationFrameHandle = requestAnimationFrame(() => {
@@ -250,6 +251,16 @@ class Drawer {
     _draw(imageData) {
         this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
         this._ctx.putImageData(imageData, 0, 0);
+    }
+
+    /**
+     * @private
+     * 
+     * @param {ImageData} imageData
+     */
+    _drawSmooth(imageData) {
+        this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+        this._ctx.putImageData(antialias(imageData), 0, 0);
     }
 }
 

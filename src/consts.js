@@ -14,3 +14,9 @@ $LOCATION_MAP.set("Julia island", {
     w: 0.000001,
     h: 0.000001
 });
+$LOCATION_MAP.set("Starfish", {
+    x: -0.375504139,
+    y: 0.658292175,
+    w: 0.003,
+    h: 0.003
+});

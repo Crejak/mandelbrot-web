@@ -17,13 +17,17 @@ onmessage = function (message) {
         iterationCount,
         colorMap
     } = message.data;
+    /**
+     * @type {ImageData}
+     */
+    let imageData = undefined;
     while (pixelScale >= 1) {
-        const imageData = computeBuffer(dimensionVector, realRect, pixelScale, iterationCount, colorMap);
+        imageData = computeBuffer(dimensionVector, realRect, pixelScale, iterationCount, colorMap);
         postMessage({endMessage: false, data: imageData});
         if (pixelScale === 1) {
             break;
         }
         pixelScale = Math.ceil(pixelScale / 2);
     }
-    postMessage({endMessage: true});
+    postMessage({endMessage: true, data: imageData});
 };
